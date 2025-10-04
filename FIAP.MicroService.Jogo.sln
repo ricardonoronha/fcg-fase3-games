@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FIAP.MicroService.Jogo", "FIAP.MicroService.Jogo\FIAP.MicroService.Jogo.csproj", "{A6E83F70-2A4A-4AAA-AAF5-DE1BE9EEA63E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B8084EE-C540-435F-842E-A6559EB7B0E2}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FIAP.MicroService.Jogos.API", "jogos-service\FIAP.MicroService.Jogos.API\FIAP.MicroService.Jogos.API.csproj", "{8CC8AF25-380A-43E0-A502-9A10CB4F7A13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FIAP.MicroService.Jogos.Dominio", "jogos-service\FIAP.MicroService.Jogos.Dominio\FIAP.MicroService.Jogos.Dominio.csproj", "{431FF2A7-EF97-4E98-9B59-55B7120874D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FIAP.MicroService.Jogos.Infraestrutura", "jogos-service\FIAP.MicroService.Jogos.Infraestrutura\FIAP.MicroService.Jogos.Infraestrutura.csproj", "{BB52590A-8E52-4FCC-9E32-FDDF22D3DE55}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A6E83F70-2A4A-4AAA-AAF5-DE1BE9EEA63E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6E83F70-2A4A-4AAA-AAF5-DE1BE9EEA63E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6E83F70-2A4A-4AAA-AAF5-DE1BE9EEA63E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6E83F70-2A4A-4AAA-AAF5-DE1BE9EEA63E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CC8AF25-380A-43E0-A502-9A10CB4F7A13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CC8AF25-380A-43E0-A502-9A10CB4F7A13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CC8AF25-380A-43E0-A502-9A10CB4F7A13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CC8AF25-380A-43E0-A502-9A10CB4F7A13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{431FF2A7-EF97-4E98-9B59-55B7120874D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{431FF2A7-EF97-4E98-9B59-55B7120874D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{431FF2A7-EF97-4E98-9B59-55B7120874D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{431FF2A7-EF97-4E98-9B59-55B7120874D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB52590A-8E52-4FCC-9E32-FDDF22D3DE55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB52590A-8E52-4FCC-9E32-FDDF22D3DE55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB52590A-8E52-4FCC-9E32-FDDF22D3DE55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB52590A-8E52-4FCC-9E32-FDDF22D3DE55}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

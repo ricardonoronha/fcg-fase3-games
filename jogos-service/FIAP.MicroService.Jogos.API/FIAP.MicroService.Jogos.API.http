@@ -1,0 +1,6 @@
+@FIAP.MicroService.Jogos.API_HostAddress = http://localhost:5237
+
+GET {{FIAP.MicroService.Jogos.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

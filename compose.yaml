@@ -1,0 +1,7 @@
+﻿services:
+  fiap.microservice.jogo:
+    image: fiap.microservice.jogo
+    build:
+      context: .
+      dockerfile: FIAP.MicroService.Jogo/Dockerfile
+
