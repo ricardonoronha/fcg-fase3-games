@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
 using FIAP.MicroService.Jogos.Dominio;
 using FIAP.MicroService.Jogos.Dominio.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using OpenSearch.Client;
 
 namespace FIAP.MicroService.Jogos.API.Controllers
 {
@@ -11,13 +12,21 @@ namespace FIAP.MicroService.Jogos.API.Controllers
         [HttpGet("{gameId}")]
         public async Task<IActionResult> GetById(Guid gameId)
         {
+            var Jogo = new Jogo() { Id = gameId, Nome = "Game Test" };
+
+            await Task.CompletedTask;
+
+            return Ok(Jogo);
+
+
+            /*
             var jogo = await service.GetByIdAsync(gameId);
-            return Ok(jogo);
+            return Ok(jogo);*/
         }
 
         // GET /api/games
         [HttpGet] 
-        public async Task<IActionResult> GetAll() 
+        public async Task<ActionResult<IEnumerable<Jogo>>> GetAll() 
         {
             var jogos = await service.GetAllAsync();
             return Ok(jogos);
@@ -31,7 +40,7 @@ namespace FIAP.MicroService.Jogos.API.Controllers
         }
         
         [HttpGet("search")]
-        public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<ResultadoBusca<Jogo>>> Search([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (string.IsNullOrEmpty(q))
             {
@@ -44,7 +53,7 @@ namespace FIAP.MicroService.Jogos.API.Controllers
         }
         
         [HttpGet("top")]
-        public async Task<IActionResult> GetTop([FromQuery] string by, [FromQuery] string window = "30d")
+        public async Task<ActionResult<ResultadoAgregado>> GetTop([FromQuery] string by, [FromQuery] string window = "30d")
         {
             if (string.IsNullOrEmpty(by) || !(by.Equals("genre", StringComparison.OrdinalIgnoreCase) || by.Equals("game", StringComparison.OrdinalIgnoreCase) || by.Equals("revenue", StringComparison.OrdinalIgnoreCase)))
             {

@@ -1,9 +1,11 @@
 using FIAP.MicroService.Jogos.Dominio;
 using FIAP.MicroService.Jogos.Dominio.Interfaces;
+using OpenSearch.Client;
 
 namespace FIAP.MicroService.Jogos.Infraestrutura.Service
 {
-    public class JogoService(IJogoRepository repository) : IJogoService
+
+    public class JogoService(IJogoRepository repository, OpenSearchClient openSearchClient) : IJogoService
     {
         public Task<Jogo> GetByIdAsync(Guid gameId) => repository.GetByIdAsync(gameId);
         public Task<IEnumerable<Jogo>> GetAllAsync() => repository.GetAllAsync();
@@ -13,7 +15,8 @@ namespace FIAP.MicroService.Jogos.Infraestrutura.Service
 
         public async Task<ResultadoBusca<Jogo>> SearchGamesAsync(string query, int page, int pageSize)
         {
-            
+            await openSearchClient.PingAsync();
+
             var allGames = await repository.GetAllAsync();
             
             // Filtra por Nome ou Categoria que contenha a query
