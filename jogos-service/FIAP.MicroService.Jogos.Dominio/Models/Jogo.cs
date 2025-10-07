@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace FIAP.MicroService.Jogos.Dominio
+﻿namespace FIAP.MicroService.Jogos.Dominio.Models
 {
     
     public class Jogo
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; }
         public string Nome { get; set; }
         public string Categoria { get; set; } 
         public decimal Preco { get; set; }

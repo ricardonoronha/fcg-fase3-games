@@ -1,7 +1,6 @@
-using FIAP.MicroService.Jogos.Dominio;
-using FIAP.MicroService.Jogos.Dominio.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using OpenSearch.Client;
+using FIAP.MicroService.Jogos.Dominio.Models;
+using FIAP.MicroService.Jogos.Dominio.Interfaces;
 
 namespace FIAP.MicroService.Jogos.API.Controllers
 {
@@ -18,24 +17,19 @@ namespace FIAP.MicroService.Jogos.API.Controllers
 
             return Ok(Jogo);
 
-
-            /*
-            var jogo = await service.GetByIdAsync(gameId);
-            return Ok(jogo);*/
         }
 
-        // GET /api/games
         [HttpGet] 
         public async Task<ActionResult<IEnumerable<Jogo>>> GetAll() 
         {
-            var jogos = await service.GetAllAsync();
+            var jogos = await service.ObtenhaTodosJogos();
             return Ok(jogos);
         }
         
         [HttpPost] // POST /api/games
         public async Task<IActionResult> Post(Jogo jogo)
         {
-            await service.AddAsync(jogo); 
+            await service.CriarJogo(jogo); 
             return CreatedAtAction(nameof(GetById), new { gameId = jogo.Id }, jogo);
         }
         

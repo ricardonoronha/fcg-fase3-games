@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FIAP.MicroService.Jogos.Infraestrutura.Migrations
 {
     /// <inheritdoc />
-    public partial class MigracaoFinalSQLite : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,10 +15,11 @@ namespace FIAP.MicroService.Jogos.Infraestrutura.Migrations
                 name: "Jogos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Nome = table.Column<string>(type: "TEXT", nullable: true),
-                    Categoria = table.Column<string>(type: "TEXT", nullable: true),
-                    Preco = table.Column<decimal>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Nome = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Categoria = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Preco = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DataLancamento = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {

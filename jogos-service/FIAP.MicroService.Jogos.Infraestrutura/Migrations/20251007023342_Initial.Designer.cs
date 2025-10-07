@@ -3,6 +3,7 @@ using System;
 using FIAP.MicroService.Jogos.Infraestrutura.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -10,30 +11,39 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FIAP.MicroService.Jogos.Infraestrutura.Migrations
 {
-    [DbContext(typeof(JogosDbContext))]
-    [Migration("20250928153545_MigracaoFinalSQLite")]
-    partial class MigracaoFinalSQLite
+    [DbContext(typeof(DbContextJogos))]
+    [Migration("20251007023342_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "8.0.8")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            modelBuilder.Entity("FIAP.MicroService.Jogos.Dominio.Jogo", b =>
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("FIAP.MicroService.Jogos.Dominio.Models.Jogo", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Categoria")
-                        .HasColumnType("TEXT");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DataLancamento")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Nome")
-                        .HasColumnType("TEXT");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Preco")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 

@@ -1,53 +1,54 @@
-using FIAP.MicroService.Jogos.Dominio;
+using Microsoft.EntityFrameworkCore;
+using FIAP.MicroService.Jogos.Dominio.Models;
 using FIAP.MicroService.Jogos.Dominio.Interfaces;
-using FIAP.MicroService.Jogos.Infraestrutura.Data; 
-using Microsoft.EntityFrameworkCore; 
-using System.Threading.Tasks;
+using FIAP.MicroService.Jogos.Infraestrutura.Data;
 
 namespace FIAP.MicroService.Jogos.Infraestrutura.Repositories
 {
     public class JogoRepository : IJogoRepository
     {
-        private readonly JogosDbContext _context; 
+        private readonly DbContextJogos _jogosDbContext;
 
-        // 1. O construtor agora recebe o DbContext via DI.
-        public JogoRepository(JogosDbContext context)
+        public JogoRepository(DbContextJogos jogosDbContext)
         {
-            _context = context;
+            _jogosDbContext = jogosDbContext;
         }
 
-        public async Task<IEnumerable<Jogo>> GetAllAsync()
+        public async Task<List<Jogo>> ObtenhaTodosJogos()
         {
-            // Usa o EF Core para buscar todos os registros na tabela Jogos.
-            return await _context.Jogos.ToListAsync(); 
+            return await _jogosDbContext.Jogos.AsNoTracking()
+                                              .ToListAsync();
         }
 
-        public async Task<Jogo> GetByIdAsync(Guid id)
+        public async Task<Jogo> ObtenhaJogoPorId(Guid jogoId)
         {
-            // Usa o EF Core para buscar o registro por Id.
-            return await _context.Jogos.FindAsync(id); 
+            return await _jogosDbContext.Jogos.AsNoTracking()
+                                              .FirstOrDefaultAsync(j => j.Id == jogoId);
         }
 
-        public async Task AddAsync(Jogo jogo)
+        public async Task<Guid> CriarJogo(Jogo jogo)
         {
-            await _context.Jogos.AddAsync(jogo);
-            await _context.SaveChangesAsync(); // Persiste a mudança no banco de dados.
+            await _jogosDbContext.Jogos.AddAsync(jogo);
+            await _jogosDbContext.SaveChangesAsync();
+            return jogo.Id;
         }
 
-        public async Task UpdateAsync(Jogo jogoAtualizado)
+        public async Task<Jogo> AtualizarJogo(Jogo jogo)
         {
-            _context.Jogos.Update(jogoAtualizado);
-            await _context.SaveChangesAsync(); // Persiste a mudança no banco.
+            _jogosDbContext.Jogos.Update(jogo);
+            await _jogosDbContext.SaveChangesAsync();
+            return jogo;
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task<bool> ExcluirJogo(Guid id)
         {
-            var jogo = await _context.Jogos.FindAsync(id);
-            if (jogo != null)
-            {
-                _context.Jogos.Remove(jogo);
-                await _context.SaveChangesAsync(); // Persiste a mudança no banco.
-            }
+            var jogo = await _jogosDbContext.Jogos.FindAsync(id);
+            if (jogo == null)
+                return false;
+
+            _jogosDbContext.Jogos.Remove(jogo);
+            await _jogosDbContext.SaveChangesAsync();
+            return true;
         }
     }
 }
