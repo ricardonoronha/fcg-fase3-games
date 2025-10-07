@@ -1,43 +1,49 @@
 using FIAP.MicroService.Jogos.Dominio;
 using FIAP.MicroService.Jogos.Dominio.Interfaces;
-using FIAP.MicroService.Jogos.Infraestrutura.Data; 
-using Microsoft.EntityFrameworkCore; 
-using System.Threading.Tasks;
+using FIAP.MicroService.Jogos.Infraestrutura.Data;
+using Microsoft.EntityFrameworkCore;
+
+using OpenSearch.Client; 
 
 namespace FIAP.MicroService.Jogos.Infraestrutura.Repositories
 {
     public class JogoRepository : IJogoRepository
     {
-        private readonly JogosDbContext _context; 
-
-        // 1. O construtor agora recebe o DbContext via DI.
-        public JogoRepository(JogosDbContext context)
+        private readonly JogosDbContext _context;
+        private readonly IOpenSearchClient _openSearchClient; 
+        
+        public JogoRepository(JogosDbContext context, IOpenSearchClient openSearchClient)
         {
             _context = context;
+            _openSearchClient = openSearchClient;
         }
 
         public async Task<IEnumerable<Jogo>> GetAllAsync()
         {
-            // Usa o EF Core para buscar todos os registros na tabela Jogos.
-            return await _context.Jogos.ToListAsync(); 
+            return await _context.Jogos.ToListAsync();
         }
 
         public async Task<Jogo> GetByIdAsync(Guid id)
         {
-            // Usa o EF Core para buscar o registro por Id.
-            return await _context.Jogos.FindAsync(id); 
+            return await _context.Jogos.FindAsync(id);
         }
 
         public async Task AddAsync(Jogo jogo)
         {
+        
             await _context.Jogos.AddAsync(jogo);
-            await _context.SaveChangesAsync(); // Persiste a mudança no banco de dados.
+            await _context.SaveChangesAsync();
+            
+            await _openSearchClient.IndexAsync(jogo, idx => idx.Index("jogos"));
         }
 
         public async Task UpdateAsync(Jogo jogoAtualizado)
         {
             _context.Jogos.Update(jogoAtualizado);
-            await _context.SaveChangesAsync(); // Persiste a mudança no banco.
+            await _context.SaveChangesAsync();
+
+           
+            await _openSearchClient.IndexAsync(jogoAtualizado, idx => idx.Index("jogos"));
         }
 
         public async Task DeleteAsync(Guid id)
@@ -46,8 +52,13 @@ namespace FIAP.MicroService.Jogos.Infraestrutura.Repositories
             if (jogo != null)
             {
                 _context.Jogos.Remove(jogo);
-                await _context.SaveChangesAsync(); // Persiste a mudança no banco.
+                await _context.SaveChangesAsync();
+                
+                var deleteRequest = new DeleteRequest("jogos", id.ToString());
+                
+                await _openSearchClient.DeleteAsync(deleteRequest);
             }
+        
         }
     }
 }

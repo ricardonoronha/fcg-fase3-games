@@ -1,7 +1,7 @@
 using FIAP.MicroService.Jogos.Dominio.Interfaces;
 using FIAP.MicroService.Jogos.Infraestrutura.Data;
 using FIAP.MicroService.Jogos.Infraestrutura.Repositories;
-using FIAP.MicroService.Jogos.Infraestrutura.Service;
+using FIAP.MicroService.Jogos.Infraestrutura.Service; 
 using FIAP.MicroService.Jogos.Infraestrutura.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -19,10 +19,10 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 builder.Services.AddDbContext<JogosDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddScoped<IJogoRepository, JogoRepository>();
-
 builder.Services.AddScoped<IJogoService, JogoService>();
 
 builder
@@ -32,12 +32,15 @@ builder
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddSingleton(serviceProvider =>
+
+builder.Services.AddSingleton<IOpenSearchClient>(serviceProvider =>
 {
     var settings = serviceProvider.GetRequiredService<IOptions<OpenSearchSettings>>().Value;
 
     var openSearchConnectionSettings = new ConnectionSettings(new Uri(settings.Endpoint))
-            .BasicAuthentication(settings.Username, settings.Password);
+            .BasicAuthentication(settings.Username, settings.Password)
+         
+            .DefaultIndex("jogos");
 
     var client = new OpenSearchClient(openSearchConnectionSettings);
 
@@ -55,6 +58,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+
+app.MapControllers();
+
+app.Run();
 
 app.UseHttpsRedirection();
 
