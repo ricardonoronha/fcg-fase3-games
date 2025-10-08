@@ -1,64 +1,58 @@
-using FIAP.MicroService.Jogos.Dominio;
-using FIAP.MicroService.Jogos.Dominio.Interfaces;
-using FIAP.MicroService.Jogos.Infraestrutura.Data;
-using Microsoft.EntityFrameworkCore;
-
 using OpenSearch.Client; 
+using Microsoft.EntityFrameworkCore;
+using FIAP.MicroService.Jogos.Infraestrutura.Data;
+using FIAP.MicroService.Jogos.Dominio.Interfaces.Repository;
+using FIAP.MicroService.Jogos.Dominio.Models;
 
 namespace FIAP.MicroService.Jogos.Infraestrutura.Repositories
 {
     public class JogoRepository : IJogoRepository
     {
         private readonly JogosDbContext _context;
-        private readonly IOpenSearchClient _openSearchClient; 
         
-        public JogoRepository(JogosDbContext context, IOpenSearchClient openSearchClient)
+        public JogoRepository(JogosDbContext context)
         {
-            _context = context;
-            _openSearchClient = openSearchClient;
+            this._context = context;
         }
 
         public async Task<IEnumerable<Jogo>> GetAllAsync()
         {
-            return await _context.Jogos.ToListAsync();
+            return await _context.Jogos.AsNoTracking()
+                                       .ToListAsync();
         }
 
-        public async Task<Jogo> GetByIdAsync(Guid id)
+        public async Task<Jogo?> GetByIdAsync(Guid id)
         {
-            return await _context.Jogos.FindAsync(id);
+            return await _context.Jogos.AsNoTracking()
+                                       .FirstOrDefaultAsync(t => t.Id == id);
         }
 
-        public async Task AddAsync(Jogo jogo)
+        public async Task<Guid> AddAsync(Jogo jogo)
         {
-        
             await _context.Jogos.AddAsync(jogo);
             await _context.SaveChangesAsync();
-            
-            await _openSearchClient.IndexAsync(jogo, idx => idx.Index("jogos"));
+
+            return jogo.Id;
         }
 
-        public async Task UpdateAsync(Jogo jogoAtualizado)
+        public async Task<Jogo> UpdateAsync(Jogo jogo)
         {
-            _context.Jogos.Update(jogoAtualizado);
+            _context.Jogos.Update(jogo);
             await _context.SaveChangesAsync();
 
-           
-            await _openSearchClient.IndexAsync(jogoAtualizado, idx => idx.Index("jogos"));
+            return jogo;
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             var jogo = await _context.Jogos.FindAsync(id);
-            if (jogo != null)
-            {
-                _context.Jogos.Remove(jogo);
-                await _context.SaveChangesAsync();
-                
-                var deleteRequest = new DeleteRequest("jogos", id.ToString());
-                
-                await _openSearchClient.DeleteAsync(deleteRequest);
-            }
-        
+            if (jogo == null) 
+                return false;
+
+            _context.Jogos.Remove(jogo);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

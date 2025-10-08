@@ -1,83 +1,78 @@
-using FIAP.MicroService.Jogos.Dominio;
-using FIAP.MicroService.Jogos.Dominio.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-
+using FIAP.MicroService.Jogos.Dominio.Models;
+using FIAP.MicroService.Jogos.Dominio.Interfaces.Service;
 
 namespace FIAP.MicroService.Jogos.API.Controllers;
 
 [ApiController]
 [Route("api/games")]
-public class JogosController(IJogoService service) : ControllerBase
+public class JogosController : ControllerBase
 {
-    // GET /api/games/{gameId}
-    [HttpGet("{gameId}")]
-    public async Task<IActionResult> GetById(Guid gameId)
+    private readonly IJogoService _jogoService;
+
+    public JogosController(IJogoService jogoService)
     {
-        var jogo = await service.GetByIdAsync(gameId);
-        return Ok(jogo);
+        this._jogoService = jogoService;
     }
 
-    // GET /api/games
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Jogo>>> GetAll()
     {
-        var jogos = await service.GetAllAsync();
+        var jogos = await _jogoService.GetAllAsync();
         return Ok(jogos);
     }
 
-    // POST /api/games
+    [HttpGet("{gameId:guid}")]
+    public async Task<IActionResult> GetById(Guid gameId)
+    {
+        var jogo = await _jogoService.GetByIdAsync(gameId);
+        if (jogo == null)
+            return NotFound($"Jogo com ID {gameId} não encontrado.");
+
+        return Ok(jogo);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] Jogo jogo)
     {
-        await service.AddAsync(jogo);
-        return CreatedAtAction(nameof(GetById), new { gameId = jogo.Id }, jogo);
+        var id = await _jogoService.AddAsync(jogo);
+        return CreatedAtAction(nameof(GetById), new { id }, jogo);
     }
 
-    // PUT /api/games/{gameId}
-    [HttpPut("{gameId}")]
+    [HttpPut("{gameId:guid}")]
     public async Task<IActionResult> Update(Guid gameId, [FromBody] Jogo jogoAtualizado)
     {
         if (gameId != jogoAtualizado.Id)
-        {
-            return BadRequest("O ID da rota não corresponde ao ID do jogo.");
-        }
+            return BadRequest("ID da URL não corresponde ao ID do jogo.");
 
-        await service.UpdateAsync(jogoAtualizado);
+        var atualizado = await _jogoService.UpdateAsync(jogoAtualizado);
+        if (atualizado == null)
+            return NotFound($"Jogo com ID {gameId} não encontrado.");
 
-        return NoContent(); 
+        return Ok(atualizado);
     }
 
-    // DELETE /api/games/{gameId}
-    [HttpDelete("{gameId}")]
+    [HttpDelete("{gameId:guid}")]
     public async Task<IActionResult> Delete(Guid gameId)
     {
-        await service.DeleteAsync(gameId);
-        
-        return NoContent(); 
+        var sucesso = await _jogoService.DeleteAsync(gameId);
+        if (!sucesso)
+            return NotFound($"Jogo com ID {gameId} não encontrado ou não foi possível excluir.");
+
+        return NoContent();
     }
     
     [HttpGet("search")]
-    public async Task<ActionResult<ResultadoBusca<Jogo>>> Search([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> MostGames([FromQuery] int top = 5)
     {
-        if (string.IsNullOrEmpty(q))
-        {
-            return BadRequest("O parâmetro de busca 'q' é obrigatório.");
-        }
-        
-        var resultado = await service.SearchGamesAsync(q, page, pageSize);
-        
-        return Ok(resultado);
-    }
-    
-    [HttpGet("top")]
-    public async Task<ActionResult<ResultadoAgregado>> GetTop([FromQuery] string by, [FromQuery] string window = "30d")
-    {
-        if (string.IsNullOrEmpty(by) || !(by.Equals("genre", StringComparison.OrdinalIgnoreCase) || by.Equals("game", StringComparison.OrdinalIgnoreCase) || by.Equals("revenue", StringComparison.OrdinalIgnoreCase)))
-        {
-            return BadRequest("O parâmetro 'by' deve ser 'genre', 'game' ou 'revenue'.");
-        }
-        
-        var resultados = await service.GetTopAggregatesAsync(by, window);
+        var resultados = await _jogoService.MostPopularGamesAsync(top);
         return Ok(resultados);
+    }
+
+    [HttpGet("top")]
+    public async Task<IActionResult> Suggest([FromBody] IEnumerable<string> categoriasHistorico, [FromQuery] int tamanho = 5)
+    {
+        var sugeridos = await _jogoService.SuggestGamesAsync(categoriasHistorico, tamanho);
+        return Ok(sugeridos);
     }
 }
