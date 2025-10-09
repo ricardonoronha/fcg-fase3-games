@@ -1,8 +1,7 @@
-using OpenSearch.Client; 
 using Microsoft.EntityFrameworkCore;
+using FIAP.MicroService.Jogos.Dominio.Models;
 using FIAP.MicroService.Jogos.Infraestrutura.Data;
 using FIAP.MicroService.Jogos.Dominio.Interfaces.Repository;
-using FIAP.MicroService.Jogos.Dominio.Models;
 
 namespace FIAP.MicroService.Jogos.Infraestrutura.Repositories
 {

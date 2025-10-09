@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using FIAP.MicroService.Jogos.Dominio.Models;
 using FIAP.MicroService.Jogos.Dominio.Interfaces.Service;
+using FIAP.MicroService.Jogos.API.DTOs;
 
 namespace FIAP.MicroService.Jogos.API.Controllers;
 
@@ -33,19 +34,37 @@ public class JogosController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Post([FromBody] Jogo jogo)
+    public async Task<IActionResult> Post([FromBody] CriacaoJogoDTO dto)
     {
+        var jogo = new Jogo()
+        {
+            Nome = dto.Nome,
+            Categoria = dto.Categoria,
+            Classificacao = dto.Classificacao,
+            Preco = dto.Preco,
+            DataLancamento = dto.DataLancamento
+        };
+
         var id = await _jogoService.AddAsync(jogo);
+
         return CreatedAtAction(nameof(GetById), new { id }, jogo);
     }
 
     [HttpPut("{gameId:guid}")]
-    public async Task<IActionResult> Update(Guid gameId, [FromBody] Jogo jogoAtualizado)
+    public async Task<IActionResult> Update(Guid gameId, [FromBody] AtualizarJogoDTO dto)
     {
-        if (gameId != jogoAtualizado.Id)
-            return BadRequest("ID da URL não corresponde ao ID do jogo.");
+        var jogoExistente = await _jogoService.GetByIdAsync(gameId);
 
-        var atualizado = await _jogoService.UpdateAsync(jogoAtualizado);
+        if (jogoExistente == null)
+            return NotFound($"Jogo com ID {gameId} não encontrado.");
+
+        jogoExistente.Nome = dto.Nome != null ? dto.Nome : jogoExistente.Nome;
+        jogoExistente.Classificacao = dto.Classificacao;
+        jogoExistente.Categoria = dto.Categoria != null ? dto.Categoria : jogoExistente.Categoria;
+        jogoExistente.Preco = dto.Preco;
+        jogoExistente.DataLancamento = dto.DataLancamento.HasValue ? dto.DataLancamento.Value : jogoExistente.DataLancamento;
+
+        var atualizado = await _jogoService.UpdateAsync(jogoExistente);
         if (atualizado == null)
             return NotFound($"Jogo com ID {gameId} não encontrado.");
 

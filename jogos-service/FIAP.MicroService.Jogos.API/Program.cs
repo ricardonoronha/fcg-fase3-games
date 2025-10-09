@@ -1,7 +1,6 @@
 using Serilog;
 using FluentValidation;
 using OpenSearch.Client;
-using FluentValidation.AspNetCore;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using FIAP.MicroService.Jogos.Dominio.Models;
@@ -83,9 +82,7 @@ builder.Services.AddSingleton<IOpenSearchClient>(serviceProvider =>
 
 #region FluentValidation
 
-builder.Services.AddValidatorsFromAssemblyContaining<JogoValidation>();
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Jogo>();
 
 #endregion
 
