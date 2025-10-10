@@ -46,8 +46,8 @@ public class JogosController : ControllerBase
         };
 
         var id = await _jogoService.AddAsync(jogo);
-
-        return CreatedAtAction(nameof(GetById), new { id }, jogo);
+        
+        return Ok(jogo.Id);
     }
 
     [HttpPut("{gameId:guid}")]

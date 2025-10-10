@@ -15,11 +15,12 @@ namespace FIAP.MicroService.Jogos.Infraestrutura.Migrations
                 name: "Jogos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Nome = table.Column<string>(type: "text", nullable: false),
-                    Categoria = table.Column<string>(type: "text", nullable: false),
-                    Preco = table.Column<decimal>(type: "numeric", nullable: false),
-                    DataLancamento = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Nome = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Categoria = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Classificacao = table.Column<int>(type: "int", nullable: false),
+                    Preco = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DataLancamento = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
