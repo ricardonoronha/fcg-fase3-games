@@ -51,7 +51,7 @@ jobs:
       - name: Build and push image to ECR
         env:
           ECR_REGISTRY: 670769476174.dkr.ecr.sa-east-1.amazonaws.com
-          ECR_REPOSITORY: fcg118-fase3-jogos
+          ECR_REPOSITORY: fcg-fase3-games
           IMAGE_TAG: ${{ github.run_number }}
         run: |
           # Login no ECR
@@ -72,5 +72,5 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster fcg65 \
-            --service fcg65-service \
+            --service fcg118-fase3-games \
             --force-new-deployment
