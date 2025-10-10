@@ -93,7 +93,7 @@ app.MapControllers();
 
 try
 {
-    Log.Information("Aplicação está iniciando!");
+    Log.Information("Aplicação está iniciando!!!");
     app.Run();
 }
 catch (Exception ex)
