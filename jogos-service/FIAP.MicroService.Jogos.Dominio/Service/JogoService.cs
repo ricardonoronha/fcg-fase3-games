@@ -4,6 +4,8 @@ using OpenSearch.Client;
 using FIAP.MicroService.Jogos.Dominio.Models;
 using FIAP.MicroService.Jogos.Dominio.Interfaces.Service;
 using FIAP.MicroService.Jogos.Dominio.Interfaces.Repository;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using FIAP.MicroService.Jogos.Dominio.Dtos;
 
 namespace FIAP.MicroService.Jogos.Dominio.Service
 {
@@ -147,6 +149,33 @@ namespace FIAP.MicroService.Jogos.Dominio.Service
                 Log.Error($"Falha na exclusão do jogo: {ex}");
                 throw;
             }
+        }
+
+        public async Task<PagedResult<Jogo>?> SearchAsync(string textSearch, int page, int pageSize)
+        {
+            var response = await _openSearchClient.SearchAsync<Jogo>(s => s
+                .Index("jogos")
+                .From((page - 1) * pageSize) 
+                .Size(pageSize)              
+                .Query(q => q
+                    .Wildcard(w => w
+                        .Field("nome.keyword")
+                        .Value($"*{textSearch.ToLower()}*")
+                        .CaseInsensitive(true)
+                    )
+                )
+            );
+
+            if (!response.IsValid)
+                return null;
+
+            return new PagedResult<Jogo>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = response.Total,
+                Items = response.Documents
+            };
         }
 
         public async Task<IEnumerable<ResultadoAgregado>> MostPopularGamesAsync(int top = 5)

@@ -1,44 +1,38 @@
-using Serilog;
-using FluentValidation;
-using OpenSearch.Client;
-using Microsoft.Extensions.Options;
-using Microsoft.EntityFrameworkCore;
+using Datadog.Trace;
+using Datadog.Trace.Configuration;
+using FIAP.MicroService.Jogos.Dominio.Interfaces.Repository;
+using FIAP.MicroService.Jogos.Dominio.Interfaces.Service;
 using FIAP.MicroService.Jogos.Dominio.Models;
 using FIAP.MicroService.Jogos.Dominio.Service;
 using FIAP.MicroService.Jogos.Infraestrutura.Data;
-using FIAP.MicroService.Jogos.Infraestrutura.Settings;
-using FIAP.MicroService.Jogos.Dominio.Interfaces.Service;
 using FIAP.MicroService.Jogos.Infraestrutura.Repositories;
-using FIAP.MicroService.Jogos.Dominio.Interfaces.Repository;
+using FIAP.MicroService.Jogos.Infraestrutura.Settings;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using OpenSearch.Client;
+using Serilog;
+using Serilog.Events;
+
+var settings = TracerSettings.FromDefaultSources();
+Tracer.Configure(settings);
+
+var defaultLogger = new LoggerConfiguration()
+   .MinimumLevel.Information()
+   .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+   .Enrich.FromLogContext()
+   .Enrich.WithEnvironmentName()
+   .Enrich.WithMachineName()
+   .Enrich.WithProcessId()
+   .Enrich.WithThreadId()
+   .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter(renderMessage: true))
+   .CreateLogger();
+
+Log.Logger = defaultLogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
-#region Serilog
-
-// ------------------------------
-// Configurar Serilog
-// ------------------------------
-
-var logPath = Path.Combine(AppContext.BaseDirectory, "Logs");
-
-if (!Directory.Exists(logPath))
-    Directory.CreateDirectory(logPath);
-
-Log.Logger = new LoggerConfiguration()
-        .ReadFrom.Configuration(builder.Configuration)
-        .Enrich.FromLogContext()
-        .WriteTo.Console()
-        .WriteTo.File(
-            Path.Combine(logPath, "log-.txt"),
-            rollingInterval: RollingInterval.Day,
-            outputTemplate: "[{Timestamp:dd-MM-yyyy HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-            retainedFileCountLimit: 30
-        )
-        .CreateLogger();
-
 builder.Host.UseSerilog();
-
-#endregion
 
 builder.Services.AddControllers();
 
@@ -91,11 +85,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.MapControllers();
