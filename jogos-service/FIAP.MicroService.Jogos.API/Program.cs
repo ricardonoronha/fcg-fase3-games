@@ -8,11 +8,14 @@ using FIAP.MicroService.Jogos.Infraestrutura.Data;
 using FIAP.MicroService.Jogos.Infraestrutura.Repositories;
 using FIAP.MicroService.Jogos.Infraestrutura.Settings;
 using FluentValidation;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using OpenSearch.Client;
 using Serilog;
 using Serilog.Events;
+using System.Text.Json;
 
 var settings = TracerSettings.FromDefaultSources();
 Tracer.Configure(settings);
@@ -80,6 +83,25 @@ builder.Services.AddValidatorsFromAssemblyContaining<Jogo>();
 
 #endregion
 
+#region Health Checks
+
+// ------------------------------
+// Configuração de Health Checks para Kubernetes
+// ------------------------------
+
+builder.Services.AddHealthChecks()
+    // Verifica conexão com SQL Server
+    .AddSqlServer(
+        connectionString: connectionString,
+        name: "sqlserver",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: new[] { "db", "sql", "ready" })
+    // Verifica se a aplicação está respondendo (liveness básico)
+    .AddCheck("self", () => HealthCheckResult.Healthy("API is running"), 
+        tags: new[] { "live" });
+
+#endregion
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -90,6 +112,64 @@ app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.MapControllers();
+
+#region Health Check Endpoints
+
+// ------------------------------
+// Endpoints de Health Check
+// ------------------------------
+
+// Endpoint principal - verifica tudo (para readinessProbe do K8s)
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => true,
+    ResponseWriter = WriteHealthCheckResponse
+});
+
+// Endpoint de liveness - verifica apenas se a API está viva (para livenessProbe do K8s)
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live"),
+    ResponseWriter = WriteHealthCheckResponse
+});
+
+// Endpoint de readiness - verifica dependências (para readinessProbe do K8s)
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+    ResponseWriter = WriteHealthCheckResponse
+});
+
+// Função para formatar resposta JSON dos health checks
+static Task WriteHealthCheckResponse(HttpContext context, HealthReport report)
+{
+    context.Response.ContentType = "application/json; charset=utf-8";
+
+    var options = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    var response = new
+    {
+        status = report.Status.ToString(),
+        totalDuration = report.TotalDuration.TotalMilliseconds,
+        checks = report.Entries.Select(e => new
+        {
+            name = e.Key,
+            status = e.Value.Status.ToString(),
+            duration = e.Value.Duration.TotalMilliseconds,
+            description = e.Value.Description,
+            exception = e.Value.Exception?.Message,
+            tags = e.Value.Tags
+        })
+    };
+
+    return context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
+}
+
+#endregion
 
 try
 {
