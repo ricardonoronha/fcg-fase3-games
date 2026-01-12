@@ -1,21 +1,23 @@
+using Serilog;
 using Datadog.Trace;
+using Serilog.Events;
+using RabbitMQ.Client;
+using System.Text.Json;
+using FluentValidation;
+using OpenSearch.Client;
 using Datadog.Trace.Configuration;
-using FIAP.MicroService.Jogos.Dominio.Interfaces.Repository;
-using FIAP.MicroService.Jogos.Dominio.Interfaces.Service;
+using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
 using FIAP.MicroService.Jogos.Dominio.Models;
 using FIAP.MicroService.Jogos.Dominio.Service;
 using FIAP.MicroService.Jogos.Infraestrutura.Data;
-using FIAP.MicroService.Jogos.Infraestrutura.Repositories;
-using FIAP.MicroService.Jogos.Infraestrutura.Settings;
-using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Options;
-using OpenSearch.Client;
-using Serilog;
-using Serilog.Events;
-using System.Text.Json;
+using FIAP.MicroService.Jogos.Infraestrutura.Worker;
+using FIAP.MicroService.Jogos.Infraestrutura.Settings;
+using FIAP.MicroService.Jogos.Dominio.Interfaces.Service;
+using FIAP.MicroService.Jogos.Infraestrutura.Repositories;
+using FIAP.MicroService.Jogos.Dominio.Interfaces.Repository;
 
 var settings = TracerSettings.FromDefaultSources();
 Tracer.Configure(settings);
@@ -56,6 +58,7 @@ builder.Services.AddDbContext<JogosDbContext>(options => options.UseSqlServer(co
 
 builder.Services.AddScoped<IJogoService, JogoService>();
 builder.Services.AddScoped<IJogoRepository, JogoRepository>();
+builder.Services.AddHostedService<RabbitConsumer>();
 
 #region OpenSearch
 
@@ -83,20 +86,33 @@ builder.Services.AddValidatorsFromAssemblyContaining<Jogo>();
 
 #endregion
 
+#region RabbitMQ
+
+var rabbitMQ = builder.Configuration.GetSection("RabbitMQConfigurations");
+
+builder.Services.AddSingleton<IConnection>(t =>
+{
+    var factory = new ConnectionFactory()
+    {
+        HostName = rabbitMQ["HostName"],
+        UserName = rabbitMQ["UserName"],
+        Password = rabbitMQ["Password"],
+        ConsumerDispatchConcurrency = 1,
+    };
+
+    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
+
+#endregion
+
 #region Health Checks
 
-// ------------------------------
-// Configuração de Health Checks para Kubernetes
-// ------------------------------
-
 builder.Services.AddHealthChecks()
-    // Verifica conexão com SQL Server
     .AddSqlServer(
         connectionString: connectionString,
         name: "sqlserver",
         failureStatus: HealthStatus.Unhealthy,
         tags: new[] { "db", "sql", "ready" })
-    // Verifica se a aplicação está respondendo (liveness básico)
     .AddCheck("self", () => HealthCheckResult.Healthy("API is running"), 
         tags: new[] { "live" });
 
@@ -115,32 +131,23 @@ app.MapControllers();
 
 #region Health Check Endpoints
 
-// ------------------------------
-// Endpoints de Health Check
-// ------------------------------
-
-// Endpoint principal - verifica tudo (para readinessProbe do K8s)
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     Predicate = _ => true,
     ResponseWriter = WriteHealthCheckResponse
 });
 
-// Endpoint de liveness - verifica apenas se a API está viva (para livenessProbe do K8s)
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live"),
     ResponseWriter = WriteHealthCheckResponse
 });
 
-// Endpoint de readiness - verifica dependências (para readinessProbe do K8s)
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready"),
     ResponseWriter = WriteHealthCheckResponse
 });
-
-// Função para formatar resposta JSON dos health checks
 static Task WriteHealthCheckResponse(HttpContext context, HealthReport report)
 {
     context.Response.ContentType = "application/json; charset=utf-8";
