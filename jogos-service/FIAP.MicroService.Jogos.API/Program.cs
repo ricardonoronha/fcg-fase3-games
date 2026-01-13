@@ -88,19 +88,23 @@ builder.Services.AddValidatorsFromAssemblyContaining<Jogo>();
 
 #region RabbitMQ
 
-var rabbitMQ = builder.Configuration.GetSection("RabbitMQConfigurations");
 
-builder.Services.AddSingleton<IConnection>(t =>
+
+builder.Services.AddSingleton(sp =>
 {
-    var factory = new ConnectionFactory()
-    {
-        HostName = rabbitMQ["HostName"],
-        UserName = rabbitMQ["UserName"],
-        Password = rabbitMQ["Password"],
-        ConsumerDispatchConcurrency = 1,
-    };
+    var cs = sp
+        .GetRequiredService<IConfiguration>()
+        .GetConnectionString("RabbitMq")!;
 
-    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+    return new ConnectionFactory
+    {
+        Uri = new Uri(cs),
+        ConsumerDispatchConcurrency = 1,
+        AutomaticRecoveryEnabled = true,
+        TopologyRecoveryEnabled = true,
+        RequestedHeartbeat = TimeSpan.FromSeconds(30),
+        NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+    };
 });
 
 #endregion
@@ -126,7 +130,6 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
 app.MapControllers();
 
 #region Health Check Endpoints

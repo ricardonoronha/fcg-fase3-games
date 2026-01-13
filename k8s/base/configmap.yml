@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: games-config
+  namespace: fcg-games
+  labels:
+    app: games
+data:
+
+  ASPNETCORE_ENVIRONMENT: "Production"
+
+  ## OpenSearchSettings
+  OpenSearchSettings__Endpoint: "https://search-fcg-grupo118-vwr4dz4omy6pthn76gholtuq5m.aos.sa-east-1.on.aws"
+  
+  ## CheckoutSettings
+  CheckoutSettings_QueueName: "payment-confirmed"
+
+  #Logging
+  Logging__LogLevel__Default: "Information"
+  Logging__LogLevel__Microsoft.AspNetCore: "Warning"
+  

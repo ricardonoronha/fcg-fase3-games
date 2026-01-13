@@ -1,0 +1,146 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: games
+  namespace: fcg-games
+  labels:
+    app: games
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: games
+  template:
+    metadata:
+      labels:
+        app: games
+    spec:
+      containers:
+        - name: games
+          image: fcgfase4grupo45.azurecr.io/fcg-fase4-games:alpha2
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: games-config
+
+          env:
+            
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: games-secret
+                  key: GAMES_DB_CONNECTION_STRING
+            
+            - name: ConnectionStrings__RabbitMq
+              valueFrom:
+                secretKeyRef:
+                  name: games-secret
+                  key: RABBITMQ_CONNECTION_STRING
+            
+            - name: OpenSearchSettings__Username
+              valueFrom:
+                secretKeyRef:
+                  name: games-secret
+                  key: OPENSEARCH_USER
+            
+            - name: OpenSearchSettings__Password
+              valueFrom:
+                secretKeyRef:
+                  name: games-secret
+                  key: OPENSEARCH_PASSWORD
+            
+            - name: JwtSettings_Issuer
+              valueFrom:
+                secretKeyRef:
+                  name: games-secret
+                  key: JWT_ISSUER
+
+            - name: JwtSettings_Audience
+              valueFrom:
+                secretKeyRef:
+                  name: games-secret
+                  key: JWT_AUDIENCE
+
+            - name: JwtSettings_Key
+              valueFrom:
+                secretKeyRef:
+                  name: games-secret
+                  key: JWT_KEY
+
+          # HPA precisa de requests (principalmente CPU). Ajuste para sua realidade.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "400Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: games
+  namespace: fcg-games
+  labels:
+    app: games
+spec:
+  type: LoadBalancer
+  selector:
+    app: games
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: games
+  namespace: fcg-games
+  labels:
+    app: games
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: games
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
